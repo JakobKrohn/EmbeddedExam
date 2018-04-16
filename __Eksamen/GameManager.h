@@ -19,8 +19,11 @@ public:
   Platform * getPlatforms();
 
   int getNumberOfPlatforms() const;
-
   bool gameIsOver() const;
+  
+  int getScore() const;
+  int getDelayTime() const;
+
   bool positionsHasChanged() const;
   bool platformsHasChanged() const;
   void platformsArePrinted();
@@ -39,6 +42,10 @@ private:
     Platform(), 
     Platform()
   };
+
+  int _score;
+  int _delayTime;
+  int _jumpTime;
   
   bool _jumping;
   bool _gameOver;
@@ -47,11 +54,15 @@ private:
   void updateSprite();
   void initPlatforms();
   void shiftPlatforms();
-  
+
+  bool hitPlatform() const;
   bool hitPlatformTop();
   bool hitPlatformBottom();
   bool hitPlatformRight();
   bool hitPlatformLeft();
+
+  void playTone(int tune);
+  void updateTone();
   
 };
 

@@ -1,11 +1,13 @@
 #include "GameManager.h"
 #include "Arduino.h"
-#include <stdlib.h>
 
 const int XMAX = 118;
 const int YMAX = 150;
 
 unsigned long _previousMillis = 0;
+
+unsigned long _prevTone = 0;
+const int toneTime = 100;
 
 const int SCREEN_POSITIONS[4] = {
   10, 
@@ -26,6 +28,9 @@ void GameManager::initialize()
   _jumping = false;
   _gameOver = false;
   _platformChange = false;
+  _score = 0;
+  _delayTime = 5;
+  _jumpTime = 500;
   randomSeed(analogRead(5));
   initPlatforms();
 }
@@ -34,6 +39,8 @@ void GameManager::restart()
 {
   _jumping = false;
   _gameOver = false;
+  _score = 0;
+  playTone(0);
   initPlatforms();
   sprite.setXpos(50);
   sprite.setYpos(20);
@@ -45,15 +52,16 @@ void GameManager::updateComponents()
 
   if (sprite.getYpos() <= 15 && _jumping)
   {
-    //Serial.println("Shift platforms");
+    _score++;
     shiftPlatforms();
   }
 
   if (sprite.getYpos() == YMAX)
   {
-    //Serial.println("Game Over");
     _gameOver = true;
   }
+
+  updateTone();
 }
 
 Sprite * GameManager::getSprite()
@@ -74,6 +82,16 @@ int GameManager::getNumberOfPlatforms() const
 bool GameManager::gameIsOver() const
 {
   return _gameOver;
+}
+
+int GameManager::getScore() const
+{
+  return _score;
+}
+
+int GameManager::getDelayTime() const
+{
+  return _delayTime;
 }
 
 bool GameManager::positionsHasChanged() const
@@ -128,14 +146,16 @@ void GameManager::moveSpriteDown(int increment)
 void GameManager::updateSprite()
 {
   if (hitPlatformTop()) {
+    playTone(1);
     _jumping = true;
   }
 
   if (hitPlatformBottom()) {
+    playTone(2);
     _jumping = false;
   }
 
-  if (millis() - _previousMillis >= 750) {
+  if (millis() - _previousMillis >= _jumpTime) {
     _jumping = false;
   }
 
@@ -158,14 +178,6 @@ void GameManager::initPlatforms()
 
 void GameManager::shiftPlatforms()
 {
-  /*for (int i = 0; i < NUM_PLATFORMS-1; i++)
-  {
-    platforms[i].setXpos(platforms[i+1].getXpos());
-    //platforms[i].setYpos(platforms[i+1].getYpos());
-  }
-  platforms[NUM_PLATFORMS-1].setXpos(SCREEN_POSITIONS[0]);
-  platforms[NUM_PLATFORMS-1].setYpos(random(0, YMAX - 25));*/
-  
   for (int i = 0; i < NUM_PLATFORMS; i++)
   {
     platforms[i].setYpos(platforms[i].getYpos() + 4);
@@ -177,6 +189,19 @@ void GameManager::shiftPlatforms()
   _platformChange = true;
 }
 
+bool GameManager::hitPlatform() const
+{
+  if (hitPlatformTop())
+    return true;
+  if (hitPlatformBottom())
+    return true;
+  if (hitPlatformLeft())
+    return true;
+  if (hitPlatformRight())
+    return true;
+  return false;
+}
+
 bool GameManager::hitPlatformTop()
 {
   for (int i = 0; i < NUM_PLATFORMS; i++)
@@ -185,6 +210,9 @@ bool GameManager::hitPlatformTop()
       if (sprite.getXpos() >= (platforms[i].getXpos() - 9))
         if (sprite.getYpos() == platforms[i].getYpos() - 6) 
         {
+          //playTone(1);
+          //tone(8, 1700);
+          //noTone(8);
           _previousMillis = millis();
           return true;
         }
@@ -233,5 +261,29 @@ bool GameManager::hitPlatformLeft()
           return true;
   }
   return false;
+}
+
+void GameManager::playTone(int tune)
+{
+  switch(tune)
+  {
+    case 0: 
+      noTone(8);
+      break;
+    case 1:
+      //tone(8, 1000);
+      break;
+    case 2:
+      //tone(8, 100);
+      break;
+  }
+  _prevTone = millis();
+}
+
+void GameManager::updateTone()
+{
+  if (millis() - _prevTone >= toneTime) {
+    noTone(8);
+  }
 }
 
