@@ -24,6 +24,7 @@ const uint16_t PLATFORM_COLOR = ST7735_WHITE;
 
 Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 
+// GameManager object
 GameManager gm;
 
 void setup() 
