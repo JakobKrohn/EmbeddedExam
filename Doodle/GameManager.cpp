@@ -189,7 +189,7 @@ void GameManager::shiftPlatforms()
   _platformChange = true;
 }
 
-bool GameManager::hitPlatform() const
+bool GameManager::hitPlatform() 
 {
   if (hitPlatformTop())
     return true;

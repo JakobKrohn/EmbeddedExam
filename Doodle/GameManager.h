@@ -55,7 +55,7 @@ private:
   void initPlatforms();
   void shiftPlatforms();
 
-  bool hitPlatform() const;
+  bool hitPlatform();
   bool hitPlatformTop();
   bool hitPlatformBottom();
   bool hitPlatformRight();

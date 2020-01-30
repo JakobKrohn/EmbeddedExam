@@ -1,39 +1,39 @@
+#include <SPI.h>
+#include <SD.h>  
+#include "PDQ_ST7735_config.h"      // PDQ: ST7735 pins and other setup for this sketch                        
+//#include <PDQ_GFX.h>                // PDQ: Core graphics library
+
+#include "PDQ_ST7735.h"     // PDQ: Hardware-specific driver library
+PDQ_ST7735 tft;             // PDQ: create LCD object (using pins in "PDQ_ST7735_config.h")
 
 #include "GameManager.h"
-#include <Adafruit_GFX.h>    
-#include <Adafruit_ST7735.h> 
-#include <SPI.h>
-#include <SD.h>
 
-#define SD_CS    4  // Chip select line for SD card
-#define TFT_CS  10  // Chip select line for TFT display
-#define TFT_DC   9  // Data/command line for TFT
-#define TFT_RST  8  // Reset line for TFT (or connect to +5V)
-
-const int xPin = A0;     //Connected to A0
-const int yPin = A1;     //Connected to A1
-const int zPin = A2;     //Connected to A2
+const int tft_x_pin = A0;     //Connected to A0
+const int tft_y_pin = A1;     //Connected to A1
+const int tft_z_pin = A2;     //Connected to A2
 
 const int joy_x_pin = A3;
 const int joy_y_pin = A4;
 const int joy_swt_pin = 2;
 
-const uint16_t BACKGROUND_COLOR = ST7735_BLACK;
+const int buzzer_pin = 8;
+
+const uint16_t BACKGROUND_COLOR = ST7735_BLUE;
 const uint16_t SPRITE_COLOR = ST7735_YELLOW;
 const uint16_t PLATFORM_COLOR = ST7735_WHITE;
 
-Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
-
-// GameManager object
 GameManager gm;
+
+unsigned long prevMillis = 0;
 
 void setup() 
 {
   Serial.begin(9600);
 
   pinMode(joy_swt_pin, INPUT_PULLUP);
+  pinMode(buzzer_pin, OUTPUT);
 
-  tft.initR(INITR_BLACKTAB);   
+  tft.begin();
   tft.fillScreen(BACKGROUND_COLOR);
   tft.setTextColor(PLATFORM_COLOR, BACKGROUND_COLOR);
   tft.setTextSize(2);
@@ -55,7 +55,9 @@ void loop()
   readJoystick();
   gm.updateComponents();
   updateUI();
-  delay(8);
+  delay(gm.getDelayTime());
+  //delay(8);
+  //tone(buzzer_pin, 1750);
 }
 
 void updateUI()
@@ -71,17 +73,27 @@ void updateUI()
     gm.getSprite()->updatePositions();
   }
 
-  if (gm.platformsHasChanged())
+  if (gm.platformsHasChanged() || millis() - prevMillis >= 500)
   {
-    //Serial.println("Redrawing platforms");
+    readJoystick();
     drawPlatforms();
     gm.platformsArePrinted();
+    prevMillis = millis();
   }
+
+  printScore();
+}
+
+void printScore()
+{
+  tft.setTextSize(1);
+  tft.setCursor(0, 0);
+  tft.print(gm.getScore());
+  tft.setTextSize(2);
 }
 
 void drawPlatforms()
 {
-  //tft.fillScreen(BACKGROUND_COLOR);
   for (int i = 0; i < gm.getNumberOfPlatforms(); i++)
   {
     int x = gm.getPlatforms()[i].getXpos();
@@ -89,17 +101,23 @@ void drawPlatforms()
     tft.setCursor(x, y);
     tft.print("===");
   }
-  /*tft.setCursor(0, 145);
-  tft.setTextSize(3);
-  tft.print("         ");
-  tft.setTextSize(2);*/
 }
 
 void readJoystick()
 {
   int joy_x_read = analogRead(joy_x_pin);
   int joy_y_read = analogRead(joy_y_pin);
-  //int joy_swt_read = analogRead(joy_swt_pin);
+  int tft_x_read = analogRead(tft_x_pin);
+  
+  //Serial.print("TFT X : ");
+  //Serial.println(tft_x_read);
+
+  /*if (tft_x_read < 370) {
+    gm.moveSpriteLeft(1);
+  }
+  if (tft_x_read > 390) {
+    gm.moveSpriteRight(1);
+  }*/
 
   //if (joy_x_read < 400)           // MOVE UP
     //gm.moveSpriteUp(1);
@@ -117,17 +135,6 @@ void readJoystick()
       gm.restart();
       drawPlatforms();
     }
-      
-    
-/*
-  Serial.print("JOY X: ");
-  Serial.print(joy_x_read);
-  Serial.print("\tJOY Y: ");
-  Serial.print(joy_y_read);
-  Serial.print("\txpos: ");
-  Serial.print(xpos);
-  Serial.print("\txpos: ");
-  Serial.println(ypos);
-  */
+
 }
 
